@@ -10,17 +10,32 @@ class Game
     @adjuster = adjuster
   end
 
+  # in the below I'm trying to make it so that if your roll will take you beyond the end square you won't get to move, so you'll need to land on it to win.
   def move_player(player_index, distance)
     player = @players[ player_index ]
-    player[:position] += distance
+    if player[:position] + distance <= @target
+      player[:position] += distance
+    else
+      player[:position]
+    end
   end
+# below is the original code where you automatically move the distance whether of not it takes you beyond the end space.
+  # def move_player(player_index, distance)
+  #   player = @players[ player_index ]
+  #   player[:position] += distance
+  # end
 
   def current_player()
    return @players[ @current_player_index ]
   end
 
-  def change_current_player()
+  def change_current_player(distance)
+    # adding this check on the distance means if a player rolls a 6 then it won't change current player and you'll get to roll again.
+    if distance == 6 
+      return
+    else
     @current_player_index = (@current_player_index + 1) % @players.length
+  end
 # below was the initial basic way to toggle between two players but that was limited to only working for two players. Above way is more flexible.
     # if @current_player_index == 1 
     #    @current_player_index = 0
@@ -37,8 +52,12 @@ class Game
     info = {
       player_name: current_player[:name],
       roll: distance, 
+      start_position: current_player[:position]
     }
-    move_current_player(distance)
+
+   
+# below added in so you can go beyond the final square. If your roll would take you beyond it you won't move.
+     move_current_player(distance) if info[:roll] + current_player[:position] <= 10
 
     if @adjuster
       adjustment = @adjuster.adjustment(current_player()[:position])
@@ -47,13 +66,13 @@ class Game
     end
 # above we are adding in a way to adjust in case the place you move to has a snake or a ladder. We're going to call the adjuster and check if it has any adjustments to make if a player lands on a particular space.
     info[:end_position] = current_player[:position]
-    change_current_player()
+    change_current_player(distance)
     return info
   end
-
+# originally had >= target but taken that out as we're now playing a version where you have to land on the final square, not land on it or go past it.
   def winner
     for player in @players
-      return player if player[:position] >= target
+      return player if player[:position] == target
     end
       return false
     # if current_player[:position] >= @target
